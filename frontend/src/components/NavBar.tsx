@@ -1,50 +1,47 @@
-import { Link, useLocation } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
+import { useAuth } from "../auth";
 
 function NavBar() {
   const location = useLocation();
+  const navigate = useNavigate();
+  const { token, username, logout } = useAuth();
   const isNewPage = location.pathname === "/new";
 
+  const handleLogout = () => {
+    logout();
+    navigate("/");
+  };
+
   return (
-    <header
-      style={{
-        background: "#0f172a",
-        color: "#e2e8f0",
-        padding: "0.9rem 1.5rem"
-      }}
-    >
-      <div
-        style={{
-          maxWidth: "960px",
-          margin: "0 auto",
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "space-between",
-          gap: "1rem"
-        }}
-      >
-        <Link to="/" style={{ display: "flex", alignItems: "center", gap: "0.6rem" }}>
-          <span
-            style={{
-              width: "34px",
-              height: "34px",
-              borderRadius: "10px",
-              background: "linear-gradient(135deg, #38bdf8, #6366f1)",
-              display: "inline-flex",
-              alignItems: "center",
-              justifyContent: "center",
-              fontWeight: 800,
-              fontSize: "0.95rem",
-              color: "#0b1224"
-            }}
-          >
-            ✈
-          </span>
-          <span style={{ fontSize: "1.1rem", fontWeight: 700 }}>PlaneSpotter Hub</span>
+    <header className="nav">
+      <div className="nav-inner">
+        <Link to="/" className="brand">
+          <span className="brand-mark">✈</span>
+          <span className="brand-name">PlaneSpotter Hub</span>
         </Link>
 
-        <Link className="btn secondary" to={isNewPage ? "/" : "/new"}>
-          {isNewPage ? "Back to feed" : "+ New sighting"}
-        </Link>
+        <div className="nav-actions">
+          {token ? (
+            <>
+              <span className="chip">Signed in as {username}</span>
+              <Link className="btn secondary" to={isNewPage ? "/" : "/new"}>
+                {isNewPage ? "Back to feed" : "+ New sighting"}
+              </Link>
+              <button className="btn ghost" onClick={handleLogout}>
+                Logout
+              </button>
+            </>
+          ) : (
+            <>
+              <Link className="btn ghost" to="/login">
+                Log in
+              </Link>
+              <Link className="btn" to="/signup">
+                Sign up
+              </Link>
+            </>
+          )}
+        </div>
       </div>
     </header>
   );

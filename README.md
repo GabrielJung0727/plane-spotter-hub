@@ -32,7 +32,9 @@ plane-spotter-hub/
         ├── api/client.ts
         ├── pages/
         │   ├── SightingsFeed.tsx
-        │   └── NewSighting.tsx
+        │   ├── NewSighting.tsx
+        │   ├── Login.tsx
+        │   └── Signup.tsx
         └── components/
             ├── NavBar.tsx
             └── SightingCard.tsx
@@ -44,7 +46,26 @@ plane-spotter-hub/
 예시 연결 문자열:  
 `postgresql://USER:PASSWORD@localhost:5432/plane_spotter`
 
-환경변수 `DATABASE_URL` 로 설정하거나 `app/database.py` 기본값을 수정하세요.
+환경변수 `DATABASE_URL` 로 설정하거나 `app/config.py` 기본값을 수정하세요.  
+`DATABASE_URL` 미설정 시 로컬 SQLite(`planes.db`)로 자동 폴백합니다.
+
+#### PostgreSQL 18 기본 명령어 예시
+```bash
+# 서버 접속 (관리자 계정)
+psql -U postgres
+
+# 데이터베이스와 계정 생성
+CREATE DATABASE plane_spotter;
+CREATE USER plane_user WITH PASSWORD 'strong_password';
+GRANT ALL PRIVILEGES ON DATABASE plane_spotter TO plane_user;
+
+# 서비스 확인/시작 (예: systemd)
+sudo systemctl status postgresql
+sudo systemctl start postgresql
+
+# 연결 문자열 예시
+export DATABASE_URL="postgresql://plane_user:strong_password@localhost:5432/plane_spotter"
+```
 
 ### 2) 백엔드
 ```
@@ -55,8 +76,12 @@ uvicorn app.main:app --reload
 
 엔드포인트
 - `GET /health`
-- `GET /sightings/` · `POST /sightings/`
+- `POST /auth/signup` · `POST /auth/login`
+- `GET /sightings/` (q, aircraft_id 검색 지원)
+- `GET /sightings/mine` (Bearer token 필요)
+- `POST /sightings/` (Bearer token 필요)
 - `GET /aircraft/` · `POST /aircraft/`
+- `GET /stats/` (전체 카운트)
 
 ### 3) 프론트엔드
 ```

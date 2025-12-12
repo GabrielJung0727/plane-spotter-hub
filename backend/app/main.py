@@ -5,7 +5,8 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from .database import Base, SessionLocal, engine
 from .models import Aircraft, Sighting, User
-from .routers import aircraft, sightings
+from .routers import aircraft, auth, sightings, stats
+from .security import hash_password
 
 
 app = FastAPI(title="PlaneSpotter Hub")
@@ -32,6 +33,8 @@ def health() -> dict[str, str]:
 
 app.include_router(sightings.router)
 app.include_router(aircraft.router)
+app.include_router(auth.router)
+app.include_router(stats.router)
 
 
 def _seed_data() -> None:
@@ -39,7 +42,7 @@ def _seed_data() -> None:
     try:
         user = db.query(User).first()
         if not user:
-            user = User(username="demo", email="demo@example.com", password_hash="demo")
+            user = User(username="demo", email="demo@example.com", password_hash=hash_password("demo"))
             db.add(user)
             db.commit()
             db.refresh(user)

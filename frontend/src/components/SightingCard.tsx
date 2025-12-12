@@ -14,6 +14,8 @@ function SightingCard({ sighting }: Props) {
     ? `${sighting.aircraft.airline} • ${sighting.aircraft.model}`
     : "Unknown aircraft";
 
+  const authorLabel = sighting.user ? `by ${sighting.user.username}` : "by anonymous spotter";
+
   return (
     <article className="card">
       <h3 className="title">{sighting.title}</h3>
@@ -21,6 +23,7 @@ function SightingCard({ sighting }: Props) {
         <span>{aircraftLabel}</span>
         <span>📍 {sighting.location}</span>
         <span>🕒 {formatDate(sighting.spotted_at)}</span>
+        <span>👤 {authorLabel}</span>
       </div>
       {sighting.note && <p style={{ marginTop: "0.6rem", color: "#334155" }}>{sighting.note}</p>}
     </article>

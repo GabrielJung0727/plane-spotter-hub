@@ -38,6 +38,15 @@ class AircraftRead(AircraftBase):
         orm_mode = True
 
 
+class UserPublic(BaseModel):
+    id: int
+    username: str
+    created_at: datetime
+
+    class Config:
+        orm_mode = True
+
+
 class SightingBase(BaseModel):
     title: str
     location: str
@@ -47,14 +56,35 @@ class SightingBase(BaseModel):
 
 
 class SightingCreate(SightingBase):
-    user_id: Optional[int] = 1
+    pass
 
 
 class SightingRead(SightingBase):
     id: int
-    user_id: int
     created_at: datetime
     aircraft: Optional[AircraftRead] = None
+    user: Optional[UserPublic] = None
 
     class Config:
         orm_mode = True
+
+
+class Token(BaseModel):
+    access_token: str
+    token_type: str = "bearer"
+
+
+class TokenPayload(BaseModel):
+    sub: str
+    exp: int
+
+
+class LoginRequest(BaseModel):
+    username: str
+    password: str
+
+
+class StatsRead(BaseModel):
+    users: int
+    aircraft: int
+    sightings: int

@@ -1,11 +1,10 @@
-import os
-
 from sqlalchemy import create_engine
 from sqlalchemy.orm import declarative_base, sessionmaker
 
+from .config import DATABASE_URL
 
-DATABASE_URL = os.getenv("DATABASE_URL", "postgresql://USER:PASSWORD@localhost:5432/plane_spotter")
 
-engine = create_engine(DATABASE_URL, future=True)
+connect_args = {"check_same_thread": False} if DATABASE_URL.startswith("sqlite") else {}
+engine = create_engine(DATABASE_URL, connect_args=connect_args, future=True)
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine, future=True)
 Base = declarative_base()

@@ -1,55 +1,50 @@
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy.orm import Session, selectinload
 
 from .. import models, schemas
-from ..deps import get_db
+from ..deps import get_current_user, get_db
 
 
 router = APIRouter(prefix="/sightings", tags=["sightings"])
 
 
-def _ensure_default_user(db: Session) -> models.User:
-    user = db.query(models.User).first()
-    if not user:
-        user = models.User(
-            username="demo",
-            email="demo@example.com",
-            password_hash="demo",
-        )
-        db.add(user)
-        db.commit()
-        db.refresh(user)
-    return user
-
-
 @router.get("/", response_model=list[schemas.SightingRead])
-def list_sightings(db: Session = Depends(get_db)):
-    sightings = (
-        db.query(models.Sighting)
-        .options(selectinload(models.Sighting.aircraft))
-        .order_by(models.Sighting.created_at.desc())
-        .all()
+def list_sightings(
+    db: Session = Depends(get_db),
+    q: str | None = Query(default=None, description="Search title or location"),
+    aircraft_id: int | None = Query(default=None, description="Filter by aircraft id"),
+    limit: int = Query(default=100, le=200),
+):
+    query = db.query(models.Sighting).options(
+        selectinload(models.Sighting.aircraft),
+        selectinload(models.Sighting.user),
     )
-    return sightings
+
+    if q:
+        like = f"%{q}%"
+        query = query.filter(
+            (models.Sighting.title.ilike(like)) | (models.Sighting.location.ilike(like))
+        )
+
+    if aircraft_id:
+        query = query.filter(models.Sighting.aircraft_id == aircraft_id)
+
+    return query.order_by(models.Sighting.spotted_at.desc()).limit(limit).all()
 
 
 @router.post("/", response_model=schemas.SightingRead, status_code=status.HTTP_201_CREATED)
-def create_sighting(payload: schemas.SightingCreate, db: Session = Depends(get_db)):
-    user_id = payload.user_id
-    if not user_id:
-        user_id = _ensure_default_user(db).id
-
-    user = db.get(models.User, user_id)
-    if not user:
-        raise HTTPException(status_code=404, detail="User not found")
-
+def create_sighting(
+    payload: schemas.SightingCreate,
+    db: Session = Depends(get_db),
+    current_user: models.User = Depends(get_current_user),
+):
     if payload.aircraft_id:
         aircraft = db.get(models.Aircraft, payload.aircraft_id)
         if not aircraft:
             raise HTTPException(status_code=404, detail="Aircraft not found")
 
     sighting = models.Sighting(
-        user_id=user_id,
+        user_id=current_user.id,
         aircraft_id=payload.aircraft_id,
         title=payload.title,
         location=payload.location,
@@ -60,3 +55,17 @@ def create_sighting(payload: schemas.SightingCreate, db: Session = Depends(get_d
     db.commit()
     db.refresh(sighting)
     return sighting
+
+
+@router.get("/mine", response_model=list[schemas.SightingRead])
+def my_sightings(
+    db: Session = Depends(get_db),
+    current_user: models.User = Depends(get_current_user),
+):
+    return (
+        db.query(models.Sighting)
+        .options(selectinload(models.Sighting.aircraft), selectinload(models.Sighting.user))
+        .filter(models.Sighting.user_id == current_user.id)
+        .order_by(models.Sighting.spotted_at.desc())
+        .all()
+    )
