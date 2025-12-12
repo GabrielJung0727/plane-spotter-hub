@@ -16,7 +16,12 @@ function SightingsFeed() {
   const { token } = useAuth();
 
   const filters = useMemo(
-    () => ({ q: query.trim() || undefined, aircraft_id: selectedAircraft, mine: showMine, token }),
+    () => ({
+      q: query.trim() || undefined,
+      aircraft_id: selectedAircraft,
+      mine: showMine,
+      token: token || undefined
+    }),
     [query, selectedAircraft, showMine, token]
   );
 
